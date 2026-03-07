@@ -1,0 +1,174 @@
+# SC-02: Application Workflow
+
+## 1. Citizen Grievance Filing Flow
+
+```mermaid
+flowchart TD
+    A["🌐 Citizen visits platform"] --> B["🌍 Select Language\n(English / Hindi / Tamil)"]
+    B --> C["📝 Fill Grievance Form\n(Title, Description, Location, District)"]
+    C --> D{"Anonymous?"}
+    D -- No --> E["Add Name & Contact"]
+    D -- Yes --> F["No personal data collected"]
+    E --> G["Submit Grievance"]
+    F --> G
+    G --> H["🤖 AI Engine (Gemini)\nClassify + Route"]
+    H --> I["Assign Department\n(1 of 8 categories)"]
+    H --> J["Detect Urgency\n(Low → Critical)"]
+    H --> K["Sentiment Analysis\n(Emotional distress boost)"]
+    I --> L["Set SLA Deadline"]
+    J --> L
+    K --> L
+    L --> M["✅ Grievance Created\nCitizen gets Tracking ID"]
+    M --> N["🔗 Check for Similar\nGrievances (Clustering)"]
+    N --> O{"≥ 10 similar in\nsame district?"}
+    O -- Yes --> P["🚨 Flag as Systemic Issue\nRoute to Senior Officer"]
+    O -- No --> Q["Normal Queue"]
+```
+
+---
+
+## 2. SLA Tracking & Auto-Escalation Flow
+
+```mermaid
+flowchart TD
+    A["⏰ SLA Checker\n(Runs every 15 min)"] --> B["Scan all Open/In-Progress\nGrievances"]
+    B --> C{"SLA Deadline\nBreached?"}
+    C -- No --> D["No action"]
+    C -- Yes --> E["🔺 Auto-Escalate"]
+    E --> F["Increment Escalation Level"]
+    F --> G["Log to escalation_log"]
+    G --> H{"Escalation\nLevel?"}
+    H -- "Level 1" --> I["Alert Department Head"]
+    H -- "Level 2" --> J["Alert Senior Officer"]
+    H -- "Level 3+" --> K["Alert District Collector"]
+```
+
+**SLA Deadlines by Urgency:**
+| Urgency | Deadline |
+|---------|----------|
+| Critical | 24 hours |
+| High | 48 hours |
+| Medium | 5 days |
+| Low | 10 days |
+
+---
+
+## 3. Resolution & Quality Rating Flow
+
+```mermaid
+flowchart TD
+    A["👮 Officer marks\ngrievance Resolved"] --> B["Citizen notified"]
+    B --> C["⭐ Citizen rates\nresolution (1-5 stars)"]
+    C --> D{"Rating < 2\nstars?"}
+    D -- Yes --> E["🔄 Auto-Reopen\nGrievance"]
+    E --> F["Flag for Quality Review"]
+    D -- No --> G["✅ Grievance Closed\nStats Updated"]
+```
+
+---
+
+## 4. Whistleblower Flow (Isolated)
+
+```mermaid
+flowchart TD
+    A["🔒 Citizen clicks\nWhistleblower Mode"] --> B["Separate secure form\n(No name, no contact)"]
+    B --> C["Describe corruption\nor misconduct"]
+    C --> D["Submit anonymously"]
+    D --> E["🤖 AI Classification"]
+    E --> F["Stored in isolated queue\n(No shared tables/logs)"]
+    F --> G["🎫 Receive anonymous\ntracking token (UUID)"]
+    G --> H["Track status using\ntoken only"]
+```
+
+> [!IMPORTANT]
+> Whistleblower data is **technically isolated** — separate API endpoints, no access controls shared with standard grievances, no personal data stored.
+
+---
+
+## 5. Citizen Lawyer Bot Flow
+
+```mermaid
+flowchart TD
+    A["🧑‍⚖️ Citizen opens\nLawyer Bot"] --> B["Describe grievance\nor ask a question"]
+    B --> C["🤖 Gemini AI analyzes\ncategory + context"]
+    C --> D["Bot responds with:\n• Relevant law/scheme\n• Legal entitlement\n• Which authority to escalate to\n• Suggested next steps"]
+    D --> E["Citizen can ask\nfollow-up questions"]
+    E --> C
+```
+
+---
+
+## 6. Public Accountability Dashboard
+
+```mermaid
+flowchart LR
+    A["📊 Dashboard Page"] --> B["Department-wise\nResolution Rates"]
+    A --> C["SLA Breach %\nper Department"]
+    A --> D["Avg Resolution\nTime"]
+    A --> E["Systemic Issue\nClusters"]
+    A --> F["🌍 Language Toggle\n(EN / HI / TA)"]
+    
+    G["📡 Public API\n/api/public/grievances"] --> H["NGOs"]
+    G --> I["Journalists"]
+    G --> J["Civil Society\nMonitoring"]
+```
+
+---
+
+## 7. End-to-End System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Frontend["⚛️ React + Vite Frontend"]
+        F1["Home Page"]
+        F2["File Grievance"]
+        F3["Track Grievance"]
+        F4["Whistleblower"]
+        F5["Lawyer Bot"]
+        F6["Dashboard"]
+        F7["Admin Panel"]
+    end
+
+    subgraph Backend["🐍 FastAPI Backend"]
+        B1["Grievance Routes"]
+        B2["AI Engine\n(Gemini 2.0 Flash)"]
+        B3["SLA Checker\n(APScheduler)"]
+        B4["Clustering Service"]
+        B5["Whistleblower Routes"]
+        B6["Lawyer Bot Routes"]
+        B7["Public API"]
+    end
+
+    subgraph Data["🗄️ Supabase PostgreSQL"]
+        D1["grievances"]
+        D2["escalation_log"]
+        D3["clusters"]
+        D4["cluster_members"]
+    end
+
+    subgraph AI["🧠 Google Gemini"]
+        A1["Classification"]
+        A2["Sentiment Analysis"]
+        A3["Legal Guidance"]
+        A4["Translation"]
+    end
+
+    Frontend -->|"REST API"| Backend
+    Backend -->|"SQL"| Data
+    Backend -->|"API calls"| AI
+```
+
+---
+
+## 8. Page-by-Page User Flow Summary
+
+| # | Page | User Action | System Response |
+|---|------|-------------|-----------------|
+| 1 | **Home** | View platform stats, click CTA | Show live counters, navigate |
+| 2 | **File Grievance** | Select language, fill form, submit | AI classifies → assign dept + urgency + SLA |
+| 3 | **Track** | Enter grievance ID | Show timeline, status, escalation history |
+| 4 | **Whistleblower** | Anonymous submission | Returns UUID token, isolated storage |
+| 5 | **Lawyer Bot** | Chat about legal rights | AI returns relevant laws & guidance |
+| 6 | **Dashboard** | View public stats | Charts: resolution rates, SLA breaches |
+| 7 | **Admin** | Officer manages grievances | Update status, view SLA alerts |
+| 8 | **Rate** | Rate resolved grievance | Auto-reopen if < 2 stars |

@@ -1,0 +1,29 @@
+.star-rating {
+    display: flex;
+    gap: 8px;
+}
+
+.star {
+    font-size: 32px;
+    cursor: pointer;
+    color: var(--border-glass);
+    transition: var(--transition);
+}
+
+.star:hover {
+    color: var(--accent-amber);
+    transform: scale(1.2);
+}
+
+.star.filled {
+    color: var(--accent-amber);
+    text-shadow: 0 0 10px rgba(255, 184, 0, 0.5);
+}
+
+.star.readonly {
+    cursor: default;
+}
+
+.star.readonly:hover {
+    transform: none;
+}

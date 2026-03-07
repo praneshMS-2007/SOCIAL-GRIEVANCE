@@ -1,0 +1,9 @@
+{
+    "theme": "dark",
+    "themeVariables": {
+        "fontFamily": "Inter, sans-serif"
+    },
+    "mindmap": {
+        "padding": 20
+    }
+}
