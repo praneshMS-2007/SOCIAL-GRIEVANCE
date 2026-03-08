@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { t } from '../utils/i18n';
+import { t, translateDept } from '../utils/i18n';
 import { askLawyerBot } from '../utils/api';
 import './LawyerBot.css';
 
@@ -28,7 +28,7 @@ export default function LawyerBot({ lang }) {
             const res = await askLawyerBot({ grievance_text: userMessage, category });
             setMessages((prev) => [...prev, { role: 'bot', text: res.data.response }]);
         } catch {
-            setMessages((prev) => [...prev, { role: 'bot', text: 'Sorry, I could not process your request. Please try again.' }]);
+            setMessages((prev) => [...prev, { role: 'bot', text: t(lang, 'lawyer_error') }]);
         } finally {
             setLoading(false);
         }
@@ -50,7 +50,7 @@ export default function LawyerBot({ lang }) {
                         <button key={dept}
                             className={`dept-btn ${category === dept ? 'active' : ''}`}
                             onClick={() => setCategory(dept)}>
-                            {dept}
+                            {translateDept(lang, dept)}
                         </button>
                     ))}
                 </div>
@@ -60,8 +60,8 @@ export default function LawyerBot({ lang }) {
                         {messages.length === 0 && (
                             <div className="chat-welcome">
                                 <div style={{ fontSize: 48, marginBottom: 16 }}>⚖️</div>
-                                <h3>Welcome to Citizen Lawyer Bot</h3>
-                                <p>Describe your grievance and I'll provide relevant legal guidance, your entitlements, and escalation options.</p>
+                                <h3>{t(lang, 'lawyer_welcome')}</h3>
+                                <p>{t(lang, 'lawyer_welcome_desc')}</p>
                             </div>
                         )}
                         {messages.map((msg, i) => (

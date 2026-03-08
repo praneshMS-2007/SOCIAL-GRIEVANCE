@@ -14,7 +14,7 @@ model = genai.GenerativeModel("gemini-2.5-flash")
 _executor = ThreadPoolExecutor(max_workers=4)
 
 # Timeout for Gemini API calls (seconds)
-AI_TIMEOUT = 15
+AI_TIMEOUT = 10
 
 # Track whether Gemini is available
 # Defaults to False since free tier quota may be exceeded
@@ -45,6 +45,8 @@ def _call_gemini_sync(prompt: str) -> str:
         prompt,
         request_options={"timeout": AI_TIMEOUT}
     )
+    if not response or not response.text:
+        raise RuntimeError("Empty response from Gemini")
     return response.text.strip()
 
 

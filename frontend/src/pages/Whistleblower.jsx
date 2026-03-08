@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { t, DISTRICTS } from '../utils/i18n';
+import { t, DISTRICTS, translateDept, translateDistrict } from '../utils/i18n';
 import { fileWhistleblower, trackWhistleblower } from '../utils/api';
 import './Whistleblower.css';
 
@@ -22,7 +22,7 @@ export default function Whistleblower({ lang }) {
             const res = await fileWhistleblower({ description, district: district || 'Unknown', language: lang });
             setResult(res.data);
         } catch (err) {
-            setError(err.response?.data?.detail || 'Failed to submit report');
+            setError(err.response?.data?.detail || t(lang, 'error'));
         } finally {
             setLoading(false);
         }
@@ -38,7 +38,7 @@ export default function Whistleblower({ lang }) {
             const res = await trackWhistleblower(token.trim());
             setTrackResult(res.data);
         } catch {
-            setError('Report not found');
+            setError(t(lang, 'whistle_not_found'));
         } finally {
             setLoading(false);
         }
@@ -57,10 +57,10 @@ export default function Whistleblower({ lang }) {
 
             <div className="whistle-tabs" style={{ maxWidth: 600, margin: '0 auto 24px' }}>
                 <button className={`tab-btn ${tab === 'file' ? 'active' : ''}`} onClick={() => setTab('file')}>
-                    🔒 File Report
+                    🔒 {t(lang, 'whistle_file_tab')}
                 </button>
                 <button className={`tab-btn ${tab === 'track' ? 'active' : ''}`} onClick={() => setTab('track')}>
-                    🔍 Track Report
+                    🔍 {t(lang, 'whistle_track_tab')}
                 </button>
             </div>
 
@@ -71,13 +71,13 @@ export default function Whistleblower({ lang }) {
                     <div className="form-group">
                         <label className="form-label">{t(lang, 'field_district')}</label>
                         <select className="form-select" value={district} onChange={(e) => setDistrict(e.target.value)}>
-                            <option value="">Select District</option>
-                            {DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                            <option value="">{t(lang, 'select_district')}</option>
+                            {DISTRICTS.map((d) => <option key={d} value={d}>{translateDistrict(lang, d)}</option>)}
                         </select>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Report Details *</label>
+                        <label className="form-label">{t(lang, 'whistle_report_details')} *</label>
                         <textarea className="form-textarea" value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t(lang, 'whistle_placeholder')}
@@ -94,17 +94,17 @@ export default function Whistleblower({ lang }) {
             {tab === 'file' && result && (
                 <div className="glass-card animate-in" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-                    <h2 style={{ color: 'var(--accent-green)', marginBottom: 16 }}>Report Filed Securely</h2>
+                    <h2 style={{ color: 'var(--accent-green)', marginBottom: 16 }}>{t(lang, 'whistle_report_filed')}</h2>
                     <div className="message message-success" style={{ textAlign: 'left' }}>
                         <p><strong>{t(lang, 'whistle_token_msg')}</strong></p>
                         <p style={{ fontSize: 24, fontFamily: 'monospace', wordBreak: 'break-all', marginTop: 8 }}>
                             {result.tracking_token}
                         </p>
-                        <p style={{ marginTop: 12 }}><strong>Department:</strong> {result.classification?.category}</p>
+                        <p style={{ marginTop: 12 }}><strong>{t(lang, 'result_department')}:</strong> {translateDept(lang, result.classification?.category)}</p>
                     </div>
                     <button className="btn btn-secondary" style={{ marginTop: 16 }}
                         onClick={() => navigator.clipboard.writeText(result.tracking_token)}>
-                        📋 Copy Token
+                        📋 {t(lang, 'whistle_copy_token')}
                     </button>
                 </div>
             )}
@@ -114,10 +114,10 @@ export default function Whistleblower({ lang }) {
                     <form onSubmit={handleTrack} style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
                         <input type="text" className="form-input" value={token}
                             onChange={(e) => setToken(e.target.value)}
-                            placeholder="Enter tracking token"
+                            placeholder={t(lang, 'whistle_enter_token')}
                             style={{ flex: 1 }}
                         />
-                        <button type="submit" className="btn btn-primary" disabled={loading}>Track</button>
+                        <button type="submit" className="btn btn-primary" disabled={loading}>{t(lang, 'btn_track')}</button>
                     </form>
 
                     {error && <div className="message message-error">{error}</div>}
@@ -126,19 +126,19 @@ export default function Whistleblower({ lang }) {
                         <div className="glass-card animate-in">
                             <div className="grid-2">
                                 <div>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Status</div>
-                                    <span className={`badge badge-${trackResult.status}`}>{trackResult.status}</span>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t(lang, 'label_status')}</div>
+                                    <span className={`badge badge-${trackResult.status}`}>{t(lang, `status_${trackResult.status}`)}</span>
                                 </div>
                                 <div>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Category</div>
-                                    <div>{trackResult.category}</div>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t(lang, 'label_category')}</div>
+                                    <div>{translateDept(lang, trackResult.category)}</div>
                                 </div>
                                 <div>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Urgency</div>
-                                    <span className={`badge badge-${trackResult.urgency}`}>{trackResult.urgency}</span>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t(lang, 'label_urgency')}</div>
+                                    <span className={`badge badge-${trackResult.urgency}`}>{t(lang, `urgency_${trackResult.urgency}`)}</span>
                                 </div>
                                 <div>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Escalation Level</div>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t(lang, 'label_escalation_level')}</div>
                                     <div>{trackResult.escalation_level}</div>
                                 </div>
                             </div>

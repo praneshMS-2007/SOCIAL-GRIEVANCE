@@ -31,6 +31,11 @@ def _init_sqlite():
             status TEXT NOT NULL DEFAULT 'open',
             language TEXT DEFAULT 'en',
             location TEXT,
+            state TEXT,
+            city TEXT,
+            area TEXT,
+            pincode TEXT,
+            landmark TEXT,
             district TEXT DEFAULT 'Unknown',
             is_anonymous INTEGER DEFAULT 0,
             is_whistleblower INTEGER DEFAULT 0,
@@ -80,6 +85,14 @@ def _init_sqlite():
             created_at TEXT DEFAULT (datetime('now'))
         );
     """)
+
+    # Auto-migrate: add new columns if they don't exist (for existing databases)
+    existing_cols = [row[1] for row in conn.execute("PRAGMA table_info(grievances)").fetchall()]
+    migration_cols = {"state": "TEXT", "city": "TEXT", "area": "TEXT", "pincode": "TEXT", "landmark": "TEXT"}
+    for col_name, col_type in migration_cols.items():
+        if col_name not in existing_cols:
+            conn.execute(f"ALTER TABLE grievances ADD COLUMN {col_name} {col_type}")
+    conn.commit()
 
     # Seed default users if table is empty
     import hashlib

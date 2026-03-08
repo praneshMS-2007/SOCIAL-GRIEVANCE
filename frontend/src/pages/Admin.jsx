@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { t } from '../utils/i18n';
+import { t, translateDept, translateRole, translateDisplayName, translateDistrict } from '../utils/i18n';
 import { listGrievances, resolveGrievance, listUsers, createUser, updateUser, deleteUser } from '../utils/api';
 
 const DEPARTMENTS = [
@@ -14,23 +14,23 @@ export default function Admin({ lang }) {
     return (
         <div className="page">
             <div className="page-header animate-in">
-                <h1 className="page-title">⚙️ Admin Panel</h1>
-                <p className="page-subtitle">Superadmin — Manage grievances and users</p>
+                <h1 className="page-title">⚙️ {t(lang, 'admin_title')}</h1>
+                <p className="page-subtitle">{t(lang, 'admin_subtitle')}</p>
             </div>
 
             {/* Tabs */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
                 <button className={`btn ${tab === 'grievances' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setTab('grievances')}>
-                    📋 Grievances
+                    📋 {t(lang, 'admin_tab_grievances')}
                 </button>
                 <button className={`btn ${tab === 'users' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setTab('users')}>
-                    👤 User Management
+                    👤 {t(lang, 'admin_tab_users')}
                 </button>
             </div>
 
-            {tab === 'grievances' ? <GrievancesTab lang={lang} /> : <UsersTab />}
+            {tab === 'grievances' ? <GrievancesTab lang={lang} /> : <UsersTab lang={lang} />}
         </div>
     );
 }
@@ -65,50 +65,50 @@ function GrievancesTab({ lang }) {
         if (!notes.trim()) return;
         try {
             await resolveGrievance(id, { resolution_notes: notes });
-            setMessage('✅ Grievance resolved');
+            setMessage(`✅ ${t(lang, 'admin_resolved_msg')}`);
             setResolving(null);
             setNotes('');
             fetchGrievances();
             setTimeout(() => setMessage(''), 3000);
         } catch {
-            setMessage('❌ Failed to resolve');
+            setMessage(`❌ ${t(lang, 'admin_resolve_fail')}`);
         }
     };
 
     const getTimeRemaining = (deadline) => {
         if (!deadline) return 'N/A';
         const diff = new Date(deadline) - new Date();
-        if (diff < 0) return '⚠️ BREACHED';
+        if (diff < 0) return `⚠️ ${t(lang, 'admin_breached')}`;
         const hours = Math.floor(diff / 3600000);
-        if (hours < 24) return `${hours}h`;
-        return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+        if (hours < 24) return `${hours}${t(lang, 'hours').charAt(0)}`;
+        return `${Math.floor(hours / 24)}${t(lang, 'days').charAt(0)} ${hours % 24}${t(lang, 'hours').charAt(0)}`;
     };
 
     return (
         <>
             {/* Filters */}
             <div className="glass-card" style={{ padding: 16, marginBottom: 20, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span>Department:</span>
+                <span>{t(lang, 'admin_filter_dept')}:</span>
                 <select className="form-input" value={dept} onChange={e => setDept(e.target.value)} style={{ width: 200 }}>
-                    {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    {DEPARTMENTS.map(d => <option key={d} value={d}>{d === 'All' ? t(lang, 'admin_filter_all') : translateDept(lang, d)}</option>)}
                 </select>
-                <span>Status:</span>
+                <span>{t(lang, 'admin_filter_status')}:</span>
                 <select className="form-input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: 140 }}>
                     {['All', 'open', 'escalated', 'resolved', 'reopened'].map(s =>
-                        <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        <option key={s} value={s}>{s === 'All' ? t(lang, 'admin_filter_all') : t(lang, `status_${s}`)}</option>
                     )}
                 </select>
-                <span style={{ color: 'var(--text-muted)' }}>{grievances.length} grievances</span>
+                <span style={{ color: 'var(--text-muted)' }}>{grievances.length} {t(lang, 'admin_grievance_count')}</span>
             </div>
 
             {message && <div className="message message-success" style={{ marginBottom: 16 }}>{message}</div>}
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: 40 }}>Loading...</div>
+                <div style={{ textAlign: 'center', padding: 40 }}>{t(lang, 'loading')}</div>
             ) : grievances.length === 0 ? (
                 <div className="glass-card" style={{ textAlign: 'center', padding: 40 }}>
                     <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
-                    <p style={{ color: 'var(--text-muted)' }}>No data available</p>
+                    <p style={{ color: 'var(--text-muted)' }}>{t(lang, 'no_data')}</p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: 12 }}>
@@ -118,24 +118,24 @@ function GrievancesTab({ lang }) {
                                 <div>
                                     <strong>{g.tracking_id}</strong> — {g.title}
                                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                                        {g.category} • {g.district} • SLA: {getTimeRemaining(g.sla_deadline)}
+                                        {translateDept(lang, g.category)} • {translateDistrict(lang, g.district)} • SLA: {getTimeRemaining(g.sla_deadline)}
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: 6 }}>
-                                    <span className={`badge badge-${g.urgency}`}>{g.urgency?.toUpperCase()}</span>
-                                    <span className={`badge badge-${g.status}`}>{g.status?.toUpperCase()}</span>
+                                    <span className={`badge badge-${g.urgency}`}>{t(lang, `urgency_${g.urgency}`)?.toUpperCase()}</span>
+                                    <span className={`badge badge-${g.status}`}>{t(lang, `status_${g.status}`)?.toUpperCase()}</span>
                                 </div>
                             </div>
                             {g.status !== 'resolved' && (
                                 resolving === g.id ? (
                                     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                                         <input className="form-input" value={notes} onChange={e => setNotes(e.target.value)}
-                                            placeholder="Resolution notes..." style={{ flex: 1, fontSize: 13 }} />
-                                        <button className="btn btn-primary" style={{ fontSize: 12 }} onClick={() => handleResolve(g.id)}>Confirm</button>
-                                        <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => { setResolving(null); setNotes(''); }}>Cancel</button>
+                                            placeholder={t(lang, 'admin_resolve_placeholder')} style={{ flex: 1, fontSize: 13 }} />
+                                        <button className="btn btn-primary" style={{ fontSize: 12 }} onClick={() => handleResolve(g.id)}>{t(lang, 'admin_confirm')}</button>
+                                        <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => { setResolving(null); setNotes(''); }}>{t(lang, 'admin_cancel')}</button>
                                     </div>
                                 ) : (
-                                    <button className="btn btn-primary" style={{ fontSize: 12, marginTop: 8 }} onClick={() => setResolving(g.id)}>Resolve</button>
+                                    <button className="btn btn-primary" style={{ fontSize: 12, marginTop: 8 }} onClick={() => setResolving(g.id)}>{t(lang, 'admin_resolve')}</button>
                                 )
                             )}
                         </div>
@@ -147,7 +147,7 @@ function GrievancesTab({ lang }) {
 }
 
 // ────── Users Tab ──────
-function UsersTab() {
+function UsersTab({ lang }) {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
@@ -173,13 +173,13 @@ function UsersTab() {
         if (!form.username || !form.password) return;
         try {
             await createUser(form);
-            setMessage('✅ User created');
+            setMessage(`✅ ${t(lang, 'admin_user_created')}`);
             setShowCreate(false);
             setForm({ username: '', password: '', role: 'department', department: '', display_name: '' });
             fetchUsers();
             setTimeout(() => setMessage(''), 3000);
         } catch (err) {
-            setMessage('❌ ' + (err.response?.data?.detail || 'Failed to create'));
+            setMessage('❌ ' + (err.response?.data?.detail || t(lang, 'admin_create_fail')));
         }
     };
 
@@ -191,24 +191,24 @@ function UsersTab() {
             if (form.department !== undefined) data.department = form.department;
             if (form.display_name) data.display_name = form.display_name;
             await updateUser(id, data);
-            setMessage('✅ User updated');
+            setMessage(`✅ ${t(lang, 'admin_user_updated')}`);
             setEditing(null);
             fetchUsers();
             setTimeout(() => setMessage(''), 3000);
         } catch (err) {
-            setMessage('❌ ' + (err.response?.data?.detail || 'Failed to update'));
+            setMessage('❌ ' + (err.response?.data?.detail || t(lang, 'admin_update_fail')));
         }
     };
 
     const handleDelete = async (id) => {
         try {
             await deleteUser(id);
-            setMessage('✅ User deleted');
+            setMessage(`✅ ${t(lang, 'admin_user_deleted')}`);
             setConfirmDelete(null);
             fetchUsers();
             setTimeout(() => setMessage(''), 3000);
         } catch (err) {
-            setMessage('❌ ' + (err.response?.data?.detail || 'Failed to delete'));
+            setMessage('❌ ' + (err.response?.data?.detail || t(lang, 'admin_delete_fail')));
             setConfirmDelete(null);
         }
     };
@@ -216,9 +216,9 @@ function UsersTab() {
     return (
         <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <span style={{ color: 'var(--text-muted)' }}>{users.length} users</span>
+                <span style={{ color: 'var(--text-muted)' }}>{users.length} {t(lang, 'admin_user_count')}</span>
                 <button className="btn btn-primary" onClick={() => { setShowCreate(!showCreate); setEditing(null); }}>
-                    ➕ Add User
+                    ➕ {t(lang, 'admin_add_user')}
                 </button>
             </div>
 
@@ -227,50 +227,50 @@ function UsersTab() {
             {/* Create Form */}
             {showCreate && (
                 <div className="glass-card" style={{ padding: 20, marginBottom: 16 }}>
-                    <h3 style={{ fontSize: 16, marginBottom: 16 }}>Create New User</h3>
+                    <h3 style={{ fontSize: 16, marginBottom: 16 }}>{t(lang, 'admin_create_user')}</h3>
                     <div className="grid-2" style={{ gap: 12, marginBottom: 12 }}>
                         <div>
-                            <label className="form-label">Username</label>
+                            <label className="form-label">{t(lang, 'admin_username')}</label>
                             <input className="form-input" value={form.username}
                                 onChange={e => setForm({ ...form, username: e.target.value })} placeholder="e.g. newuser" />
                         </div>
                         <div>
-                            <label className="form-label">Password</label>
+                            <label className="form-label">{t(lang, 'admin_password')}</label>
                             <input className="form-input" type="password" value={form.password}
-                                onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Password" />
+                                onChange={e => setForm({ ...form, password: e.target.value })} placeholder={t(lang, 'admin_password')} />
                         </div>
                         <div>
-                            <label className="form-label">Role</label>
+                            <label className="form-label">{t(lang, 'admin_role')}</label>
                             <select className="form-input" value={form.role}
                                 onChange={e => setForm({ ...form, role: e.target.value })}>
-                                <option value="admin">Admin</option>
-                                <option value="department">Department</option>
+                                <option value="admin">{translateRole(lang, 'admin')}</option>
+                                <option value="department">{translateRole(lang, 'department')}</option>
                             </select>
                         </div>
                         <div>
-                            <label className="form-label">Department</label>
+                            <label className="form-label">{t(lang, 'admin_department')}</label>
                             <select className="form-input" value={form.department}
                                 onChange={e => setForm({ ...form, department: e.target.value })}>
-                                <option value="">None</option>
-                                {DEPARTMENTS.slice(1).map(d => <option key={d} value={d}>{d}</option>)}
+                                <option value="">{t(lang, 'admin_none')}</option>
+                                {DEPARTMENTS.slice(1).map(d => <option key={d} value={d}>{translateDept(lang, d)}</option>)}
                             </select>
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <label className="form-label">Display Name</label>
+                            <label className="form-label">{t(lang, 'admin_display_name')}</label>
                             <input className="form-input" value={form.display_name}
                                 onChange={e => setForm({ ...form, display_name: e.target.value })} placeholder="e.g. John Doe" />
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                        <button className="btn btn-primary" onClick={handleCreate}>Create</button>
-                        <button className="btn btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>
+                        <button className="btn btn-primary" onClick={handleCreate}>{t(lang, 'admin_create')}</button>
+                        <button className="btn btn-secondary" onClick={() => setShowCreate(false)}>{t(lang, 'admin_cancel')}</button>
                     </div>
                 </div>
             )}
 
             {/* Users List */}
             {loading ? (
-                <div style={{ textAlign: 'center', padding: 40 }}>Loading...</div>
+                <div style={{ textAlign: 'center', padding: 40 }}>{t(lang, 'loading')}</div>
             ) : (
                 <div style={{ display: 'grid', gap: 10 }}>
                     {users.map(u => (
@@ -280,35 +280,35 @@ function UsersTab() {
                                 <div>
                                     <div className="grid-2" style={{ gap: 10, marginBottom: 12 }}>
                                         <div>
-                                            <label className="form-label" style={{ fontSize: 11 }}>New Password (leave blank to keep)</label>
+                                            <label className="form-label" style={{ fontSize: 11 }}>{t(lang, 'admin_new_password')}</label>
                                             <input className="form-input" type="password" value={form.password}
-                                                onChange={e => setForm({ ...form, password: e.target.value })} placeholder="New password" />
+                                                onChange={e => setForm({ ...form, password: e.target.value })} placeholder={t(lang, 'admin_password')} />
                                         </div>
                                         <div>
-                                            <label className="form-label" style={{ fontSize: 11 }}>Role</label>
+                                            <label className="form-label" style={{ fontSize: 11 }}>{t(lang, 'admin_role')}</label>
                                             <select className="form-input" value={form.role}
                                                 onChange={e => setForm({ ...form, role: e.target.value })}>
-                                                <option value="admin">Admin</option>
-                                                <option value="department">Department</option>
+                                                <option value="admin">{translateRole(lang, 'admin')}</option>
+                                                <option value="department">{translateRole(lang, 'department')}</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="form-label" style={{ fontSize: 11 }}>Department</label>
+                                            <label className="form-label" style={{ fontSize: 11 }}>{t(lang, 'admin_department')}</label>
                                             <select className="form-input" value={form.department}
                                                 onChange={e => setForm({ ...form, department: e.target.value })}>
-                                                <option value="">None</option>
-                                                {DEPARTMENTS.slice(1).map(d => <option key={d} value={d}>{d}</option>)}
+                                                <option value="">{t(lang, 'admin_none')}</option>
+                                                {DEPARTMENTS.slice(1).map(d => <option key={d} value={d}>{translateDept(lang, d)}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="form-label" style={{ fontSize: 11 }}>Display Name</label>
+                                            <label className="form-label" style={{ fontSize: 11 }}>{t(lang, 'admin_display_name')}</label>
                                             <input className="form-input" value={form.display_name}
                                                 onChange={e => setForm({ ...form, display_name: e.target.value })} />
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 8 }}>
-                                        <button className="btn btn-primary" style={{ fontSize: 12 }} onClick={() => handleUpdate(u.id)}>Save</button>
-                                        <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => setEditing(null)}>Cancel</button>
+                                        <button className="btn btn-primary" style={{ fontSize: 12 }} onClick={() => handleUpdate(u.id)}>{t(lang, 'admin_save')}</button>
+                                        <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => setEditing(null)}>{t(lang, 'admin_cancel')}</button>
                                     </div>
                                 </div>
                             ) : (
@@ -316,14 +316,14 @@ function UsersTab() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                            <strong style={{ fontSize: 15 }}>{u.display_name || u.username}</strong>
+                                            <strong style={{ fontSize: 15 }}>{translateDisplayName(lang, u.display_name || u.username)}</strong>
                                             <span className={`badge ${u.role === 'admin' ? 'badge-critical' : 'badge-open'}`}
                                                 style={{ fontSize: 10 }}>
-                                                {u.role.toUpperCase()}
+                                                {translateRole(lang, u.role).toUpperCase()}
                                             </span>
                                         </div>
                                         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                                            @{u.username} {u.department ? `• ${u.department}` : ''}
+                                            @{u.username} {u.department ? `• ${translateDept(lang, u.department)}` : ''}
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 8 }}>
@@ -333,24 +333,24 @@ function UsersTab() {
                                                 setShowCreate(false);
                                                 setForm({ password: '', role: u.role, department: u.department || '', display_name: u.display_name || '' });
                                             }}>
-                                            ✏️ Edit
+                                            ✏️ {t(lang, 'admin_edit')}
                                         </button>
                                         {u.username !== 'admin' && (
                                             confirmDelete === u.id ? (
                                                 <>
                                                     <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 12px', color: 'var(--accent-red)', background: 'rgba(255,0,80,0.15)' }}
                                                         onClick={() => handleDelete(u.id)}>
-                                                        ⚠️ Confirm
+                                                        ⚠️ {t(lang, 'admin_confirm_delete')}
                                                     </button>
                                                     <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 12px' }}
                                                         onClick={() => setConfirmDelete(null)}>
-                                                        Cancel
+                                                        {t(lang, 'admin_cancel')}
                                                     </button>
                                                 </>
                                             ) : (
                                                 <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 12px', color: 'var(--accent-red)' }}
                                                     onClick={() => setConfirmDelete(u.id)}>
-                                                    🗑️ Delete
+                                                    🗑️ {t(lang, 'admin_delete')}
                                                 </button>
                                             )
                                         )}

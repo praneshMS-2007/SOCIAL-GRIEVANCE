@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { t } from '../utils/i18n';
+import { t, translateDept, translateDistrict } from '../utils/i18n';
 import { trackGrievance, rateGrievance } from '../utils/api';
 import StarRating from '../components/StarRating';
 
@@ -21,7 +21,7 @@ export default function TrackGrievance({ lang }) {
             const res = await trackGrievance(trackingId.trim());
             setData(res.data);
         } catch {
-            setError('Grievance not found. Please check your tracking ID.');
+            setError(t(lang, 'track_not_found'));
         } finally {
             setLoading(false);
         }
@@ -39,7 +39,7 @@ export default function TrackGrievance({ lang }) {
                 });
             }
         } catch {
-            setError('Failed to submit rating');
+            setError(t(lang, 'rate_failed'));
         }
     };
 
@@ -76,25 +76,25 @@ export default function TrackGrievance({ lang }) {
 
                     <div className="grid-2" style={{ marginBottom: 24 }}>
                         <div>
-                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Department</div>
-                            <div style={{ fontWeight: 600 }}>{data.grievance.category}</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>{t(lang, 'label_department')}</div>
+                            <div style={{ fontWeight: 600 }}>{translateDept(lang, data.grievance.category)}</div>
                         </div>
                         <div>
-                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Urgency</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>{t(lang, 'label_urgency')}</div>
                             <span className={`badge badge-${data.grievance.urgency}`}>
                                 {t(lang, `urgency_${data.grievance.urgency}`)}
                             </span>
                         </div>
                         <div>
-                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>District</div>
-                            <div>{data.grievance.district}</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>{t(lang, 'label_district')}</div>
+                            <div>{translateDistrict(lang, data.grievance.district)}</div>
                         </div>
                         <div>
-                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>SLA Deadline</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>{t(lang, 'label_sla_deadline')}</div>
                             <div>{new Date(data.grievance.sla_deadline).toLocaleString()}</div>
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Description</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>{t(lang, 'label_description')}</div>
                             <div style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{data.grievance.description}</div>
                         </div>
                     </div>
@@ -102,13 +102,13 @@ export default function TrackGrievance({ lang }) {
                     {/* Escalation Timeline */}
                     {data.escalation_history?.length > 0 && (
                         <div style={{ marginBottom: 24 }}>
-                            <h3 style={{ fontSize: 16, marginBottom: 16, color: 'var(--accent-red)' }}>⚠️ Escalation History</h3>
+                            <h3 style={{ fontSize: 16, marginBottom: 16, color: 'var(--accent-red)' }}>⚠️ {t(lang, 'escalation_history')}</h3>
                             <div className="timeline">
                                 {data.escalation_history.map((e, i) => (
                                     <div key={i} className="timeline-item escalated">
                                         <div className="timeline-date">{new Date(e.escalated_at).toLocaleString()}</div>
                                         <div className="timeline-text">
-                                            Level {e.escalation_level} — {e.reason}
+                                            {t(lang, 'escalation_level')} {e.escalation_level} — {e.reason}
                                         </div>
                                     </div>
                                 ))}
@@ -125,7 +125,7 @@ export default function TrackGrievance({ lang }) {
                                 {t(lang, 'rate_submit')}
                             </button>
                             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-                                Rating below 2 stars will auto-reopen the grievance
+                                {t(lang, 'rate_low_warning')}
                             </p>
                         </div>
                     )}
@@ -133,8 +133,8 @@ export default function TrackGrievance({ lang }) {
                     {ratingSubmitted && (
                         <div className="message message-success" style={{ textAlign: 'center' }}>
                             {rating < 2
-                                ? '⚠️ Grievance has been reopened due to low rating'
-                                : '✅ Thank you for your feedback!'}
+                                ? `⚠️ ${t(lang, 'rate_reopened')}`
+                                : `✅ ${t(lang, 'rate_thanks')}`}
                         </div>
                     )}
                 </div>

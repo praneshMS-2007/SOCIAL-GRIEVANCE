@@ -1,10 +1,11 @@
 import uuid
+import asyncio
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 from db import supabase
-from ai_engine import classify_grievance
+from ai_engine import classify_grievance, _keyword_classify
 from services.sla_checker import get_sla_deadline
 from services.clustering import check_and_cluster
 
@@ -15,7 +16,12 @@ class GrievanceCreate(BaseModel):
     title: str
     description: str
     language: str = "en"  # en, hi, ta
-    location: Optional[str] = None
+    location: str  # Street / area address (mandatory)
+    state: str  # State (mandatory)
+    city: str  # City / Town (mandatory)
+    area: Optional[str] = None  # Area / Locality
+    pincode: str  # Pincode (mandatory)
+    landmark: Optional[str] = None  # Nearby landmark
     district: str = "Unknown"
     citizen_name: Optional[str] = None
     citizen_contact: Optional[str] = None
@@ -34,8 +40,15 @@ class QualityRating(BaseModel):
 @router.post("")
 async def file_grievance(data: GrievanceCreate):
     """File a new grievance. AI classifies it automatically."""
-    # AI Classification
-    ai_result = await classify_grievance(data.title, data.description, data.language)
+    # AI Classification with route-level timeout safety
+    try:
+        ai_result = await asyncio.wait_for(
+            classify_grievance(data.title, data.description, data.language),
+            timeout=12
+        )
+    except (asyncio.TimeoutError, Exception) as e:
+        print(f"⚠️ AI classification failed at route level: {e} — using keyword fallback")
+        ai_result = _keyword_classify(data.title, data.description)
 
     tracking_id = str(uuid.uuid4())[:8].upper()
     sla_deadline = get_sla_deadline(ai_result["urgency"])
@@ -50,6 +63,11 @@ async def file_grievance(data: GrievanceCreate):
         "status": "open",
         "language": data.language,
         "location": data.location,
+        "state": data.state,
+        "city": data.city,
+        "area": data.area,
+        "pincode": data.pincode,
+        "landmark": data.landmark,
         "district": data.district,
         "is_anonymous": data.is_anonymous,
         "is_whistleblower": False,

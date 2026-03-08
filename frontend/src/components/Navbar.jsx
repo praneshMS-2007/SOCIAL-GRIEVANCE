@@ -47,7 +47,7 @@ export default function Navbar({ lang, setLang }) {
                     {isAdmin() && (
                         <Link to="/admin" className={`nav-link ${location.pathname === '/admin' ? 'active' : ''}`}>
                             <span className="nav-icon">⚙️</span>
-                            <span className="nav-label">Admin</span>
+                            <span className="nav-label">{t(lang, 'nav_admin')}</span>
                         </Link>
                     )}
 
@@ -55,7 +55,7 @@ export default function Navbar({ lang, setLang }) {
                     {isDepartment() && (
                         <Link to="/dept-dashboard" className={`nav-link ${location.pathname === '/dept-dashboard' ? 'active' : ''}`}>
                             <span className="nav-icon">🏢</span>
-                            <span className="nav-label">My Dept</span>
+                            <span className="nav-label">{t(lang, 'dept_dashboard_title')}</span>
                         </Link>
                     )}
                 </div>
@@ -76,12 +76,12 @@ export default function Navbar({ lang, setLang }) {
                     {user ? (
                         <button onClick={handleLogout} className="btn btn-secondary"
                             style={{ fontSize: 11, padding: '4px 12px', whiteSpace: 'nowrap' }}>
-                            👋 Logout
+                            👋 {t(lang, 'nav_logout')}
                         </button>
                     ) : (
                         <Link to="/login" className="btn btn-primary"
                             style={{ fontSize: 11, padding: '4px 12px', whiteSpace: 'nowrap', textDecoration: 'none' }}>
-                            🔐 Login
+                            🔐 {t(lang, 'nav_login')}
                         </Link>
                     )}
                 </div>
