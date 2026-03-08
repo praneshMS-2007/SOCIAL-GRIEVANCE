@@ -2,16 +2,16 @@ import os
 import json
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel("gemini-2.5-flash")
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Thread pool for running sync Gemini calls without blocking the event loop
 _executor = ThreadPoolExecutor(max_workers=4)
+
 
 # Timeout for Gemini API calls (seconds)
 AI_TIMEOUT = 10
@@ -41,9 +41,13 @@ URGENCY_LEVELS = ["low", "medium", "high", "critical"]
 
 def _call_gemini_sync(prompt: str) -> str:
     """Synchronous Gemini call — run in thread pool."""
-    response = model.generate_content(
-        prompt,
-        request_options={"timeout": AI_TIMEOUT}
+    from google.genai.types import GenerateContentConfig
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+        config=GenerateContentConfig(
+            # Using system instructions or config is optional and varies, basic timeout handling through asyncio is sufficient.
+        )
     )
     if not response or not response.text:
         raise RuntimeError("Empty response from Gemini")
